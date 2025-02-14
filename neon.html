@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Neon Tube Example with SVG and Modules</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+    </style>
+    <!-- Import map to resolve the bare module specifier "three" -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      // Import necessary modules from Three.js
+      import * as THREE from "three";
+      import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/controls/OrbitControls.js";
+      import { EffectComposer } from "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/postprocessing/EffectComposer.js";
+      import { RenderPass } from "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+      import { SVGLoader } from "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/loaders/SVGLoader.js";
+
+      // Set up the scene, camera, and renderer
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(0, 10, 20);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Set up OrbitControls (optional for navigation)
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      // Add ambient and point lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+      scene.add(ambientLight);
+      const pointLight = new THREE.PointLight(0xffffff, 1.0);
+      pointLight.position.set(0, 20, 10);
+      scene.add(pointLight);
+
+      // Set up post-processing with UnrealBloomPass for a glowing effect
+      const composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      const bloomParams = {
+        exposure: 1,
+        bloomStrength: 1.5,
+        bloomThreshold: 0,
+        bloomRadius: 0.4,
+      };
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        bloomParams.bloomStrength,
+        bloomParams.bloomRadius,
+        bloomParams.bloomThreshold
+      );
+      composer.addPass(bloomPass);
+
+      // Variable to hold our neon tube mesh
+      let neonTube = null;
+
+      // Load the SVG file to define the tube's path
+      const loader = new SVGLoader();
+      loader.load("neon-curve.svg", function (data) {
+        // Ensure there is at least one path in the SVG
+        if (data.paths.length === 0) {
+          console.error("No paths found in the SVG file.");
+          return;
+        }
+
+        // Use the first SVG path
+        const svgPath = data.paths[0];
+        // Convert the SVG path into shapes.
+        // The parameter 'true' ensures that holes are separated.
+        const shapes = svgPath.toShapes(true);
+
+        if (shapes.length === 0) {
+          console.error("No shapes could be extracted from the SVG path.");
+          return;
+        }
+
+        // Use the first shape and extract its points
+        const shape = shapes[0];
+        const svgPoints = shape.getPoints();
+
+        // Convert 2D Vector2 points to 3D Vector3 (with z=0), applying a scale factor
+        const scaleFactor = 0.1;
+        const curvePoints = svgPoints.map(
+          (p) => new THREE.Vector3(p.x * scaleFactor, p.y * scaleFactor, 0)
+        );
+
+        // Create a CatmullRomCurve3 from the SVG points
+        const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+        // Generate TubeGeometry along the curve
+        const tubeGeometry = new THREE.TubeGeometry(curve, 100, 0.5, 16, false);
+
+        // Create a neon material with high emissive intensity (cyan neon)
+        const neonColor = new THREE.Color(0x00ffff);
+        const neonMaterial = new THREE.MeshStandardMaterial({
+          color: neonColor,
+          emissive: neonColor,
+          emissiveIntensity: 5,
+          metalness: 0.5,
+          roughness: 0.1,
+          side: THREE.DoubleSide,
+        });
+
+        // Create the neon tube mesh and add it to the scene
+        neonTube = new THREE.Mesh(tubeGeometry, neonMaterial);
+        scene.add(neonTube);
+      });
+
+      // Handle window resizing
+      window.addEventListener("resize", onWindowResize, false);
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate the tube if it has been loaded
+        if (neonTube) {
+          neonTube.rotation.x += 0.005;
+          neonTube.rotation.y += 0.01;
+        }
+
+        controls.update();
+        composer.render();
+      }
+      animate();
+    </script>
+  </body>
+</html>
