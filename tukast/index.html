@@ -92,7 +92,7 @@
         init: function () {
           this.el.addEventListener("loaded", () => {
             const camera = this.el.camera;
-            camera.setFocalLength(50);
+            camera.setFocalLength(35);
           });
         },
       });
@@ -106,10 +106,10 @@
         <!-- Replace with your GLB model -->
         <a-asset-item id="modelGLB" src="../assets/model.glb"></a-asset-item>
         <!-- Texture images with transparency -->
-        <img id="tex_r" src="../assets/mood_1.png" crossorigin="anonymous" />
-        <img id="tex_g" src="../assets/mood_2.png" crossorigin="anonymous" />
-        <img id="tex_b" src="../assets/mood_3.png" crossorigin="anonymous" />
-        <img id="tex_y" src="../assets/mood_4.png" crossorigin="anonymous" />
+        <img id="tex_r" src="../assets/tukast_1.png" crossorigin="anonymous" />
+        <img id="tex_g" src="../assets/tukast_2.png" crossorigin="anonymous" />
+        <img id="tex_b" src="../assets/tukast_3.png" crossorigin="anonymous" />
+        <img id="tex_y" src="../assets/tukast_4.png" crossorigin="anonymous" />
       </a-assets>
 
       <!-- GLB Model -->
@@ -218,7 +218,7 @@
       <a-entity
         id="freeCameraRig"
         wasd-controls="acceleration: 10"
-        position="0 1.6 3"
+        position="0 5 3"
       >
         <a-entity
           camera="active: true"
